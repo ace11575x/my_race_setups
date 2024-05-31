@@ -1,28 +1,14 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:my_race_setups/pages/home.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:my_race_setups/models/track.dart';
 
-void main() {
-  runApp(const MainApp());
-}
-
-class MainApp extends StatelessWidget {
-  const MainApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => MyAppState(),
-      child: MaterialApp(
-        title: 'MyRaceSetups',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
-        ),
-        home: MyHomePage(),
-      ),
-    );
-  }
+void main() async {
+  await Hive.initFlutter();
+  Hive.registerAdapter(TrackAdapter());
+  await Hive.openBox<Track>('tracks'); //Create a hive box to store tracks
+  runApp(MainApp());
 }
 
 class MyAppState extends ChangeNotifier{
@@ -32,9 +18,7 @@ class MyAppState extends ChangeNotifier{
     current = WordPair.random();
     notifyListeners();
   }
-
   var favorites = <WordPair>[];
-
   void toggleFavorite(){
     if(favorites.contains(current)){
       favorites.remove(current);
@@ -42,80 +26,5 @@ class MyAppState extends ChangeNotifier{
       favorites.add(current);
     }
     notifyListeners();
-  }
-}
-
-class MyHomePage extends StatelessWidget{
-  @override
-  Widget build(BuildContext context){
-    var appstate = context.watch<MyAppState>();
-    var pair = appstate.current;
-
-    IconData icon;
-    if(appstate.favorites.contains(pair)){
-      icon = Icons.favorite;
-    } else {
-      icon = Icons.favorite_border;
-    }
-
-    return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            BigCard(pair: pair),
-
-            SizedBox(height: 10,),
-        
-            //Button addition
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: (){
-                    appstate.toggleFavorite();
-                  }, 
-                icon: Icon(icon),
-                  label: Text('Like'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    appstate.getNext();
-                  },
-                  child: Text('Next')
-                  ),
-              ],
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class BigCard extends StatelessWidget {
-  const BigCard({
-    super.key,
-    required this.pair,
-  });
-
-  final WordPair pair;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final style = theme.textTheme.displayMedium!.copyWith(
-      color: theme.colorScheme.onPrimary,
-    );
-    return Card(
-      color: theme.colorScheme.primary,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Text(
-          pair.asLowerCase,
-          style: style,
-          semanticsLabel: "${pair.first} ${pair.second}",)
-      ),
-    );
   }
 }
